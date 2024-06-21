@@ -1,0 +1,50 @@
+.myForm{
+  min-width: 500px;
+  position: absolute;
+  text-align: center;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 1.5rem
+}
+
+#passwordHelp {
+  font-size: 0.85rem
+}
+
+#navLinkActive {
+    background-color: #e0dede;
+    color: black;
+}
+
+hr {
+  border: 0;
+  clear:both;
+  display:block;
+  width: 93%;
+  background-color:#000000;
+  height: 2px;
+}
+
+#removeFriendButton {
+  border: none;
+  background: none;
+}
+
+.w-20 {
+  width: 20%;
+}
+
+#articleTextInput {
+  text-align: left;
+}
+
+#indexPageDiv {
+  position: absolute;
+  top: 35%;
+  transform: translate(0, -50%);
+  padding: 10px;
+}
+textarea {
+  white-space: pre-line;
+}

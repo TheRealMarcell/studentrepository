@@ -1,0 +1,115 @@
+<!-- 
+Sign up page, pretty much the same as login.
+-->
+{% extends 'base.jinja' %}
+
+
+{% block content %}
+    <h1 class="text-center pt-5">Sign Up</h1>
+    <form class="myForm">
+      <div class="form-group pb-4">
+        <label>Username</label>
+        <input class="form-control" id="username" aria-describedby="nameHelp" placeholder="Enter your username">
+      </div>
+      <div class="form-group pb-4">
+        <label>Password</label>
+        <input type="password" class="form-control" id="password" placeholder="Password">
+        <small id="passwordHelp" class="form-text text-muted ">Your password should include uppercase and lowercase letters, numbers, symbols, etc.</small>
+      </div>
+      <div class="pb-4">
+        <select class="form-select" aria-label="Default select example" id="userRole">
+            <option selected>Select a role</option>
+            <option value="1">Student</option>
+            <option value="2">Staff - Academic</option>
+            <option value="3">Staff - Administrative Staff</option>
+            <option value="3">Staff - Admin</option>
+        </select>
+        </div>
+      <button onclick="signup()" type="button" class="btn btn-lg btn-primary">Sign up</button>
+    </form>
+
+    <script>
+        // this function prevents xss on the client-side by sanitising <, >, ,, ", and /
+        function xssPrevention(toOutput){
+            return toOutput.replace(/\&/g, '&amp;')
+                .replace(/\</g, '&lt;')
+                .replace(/\>/g, '&gt;')
+                .replace(/\"/g, '&quot;')
+                .replace(/\'/g, '&#x27;')
+                .replace(/\//g, '&#x2F;');
+        }
+
+
+         function isValidURL(string) {
+            if (string.length == 0) {
+                return false;
+            }
+            if (string[0] == "/") {
+                return true;
+            }
+            return false;
+        }
+
+        function isValidPassword(str) {
+            let points = 0;
+            // check password length
+            if (str.length > 10){
+                points+=1;
+            }
+            // check if uses Uppercase
+            for (let i = 0; i < str.length; i++){
+                if (str[i].toUpperCase() == str[i]){
+                    points+=1
+                    break;
+                }
+            }
+            // check if uses lowercase
+            for (let i = 0; i < str.length; i++){
+                if (str[i].toLowerCase() == str[i]){
+                    points+=1
+                    break;
+                }
+            }
+            // check if contains symbols
+            const symbols = ['!','(',')','-','.','?','[',']','_','`','~',';',':','#','@','$','%','^','&','*','+','=']
+
+            if (symbols.some(symbol => str.includes(symbol))) {
+                points+=1
+            }
+
+            if (points > 3){
+                return true;
+            }
+            else{
+                return false;
+            }
+        }
+
+
+        // this function is identical to login(), see login.jinja
+
+        async function signup() {
+            let username = xssPrevention($("#username").val())
+            let password = xssPrevention($("#password").val())
+            let role = $("#userRole").val()
+
+            // validate if password is strong
+            if (!isValidPassword(password)){
+                alert('Password is too weak!')
+                return;
+            }
+
+            let loginURL = "{{ url_for('signup_user') }}";
+            let res = await axios.post(loginURL, {
+                username: username,
+                password: password,
+                role: role
+            });
+            if (!isValidURL(res.data)) {
+                alert(res.data);
+                return;
+            }
+            window.open(res.data, "_self")
+        }
+    </script>
+{% endblock %}

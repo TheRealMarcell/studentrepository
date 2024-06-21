@@ -1,0 +1,521 @@
+{% extends 'base.jinja' %}
+
+{% block content %}
+
+
+{# add friend popup #}
+<div class="modal" tabindex="-1" id="myModal">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Add a new friend</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+            <form id="friend_form">
+              <label for="enter_value">Friend's Username:</label><br>
+              <input type="text" id="enter_value" name="enter_value">
+              <input type="submit" value="Submit">
+            </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container-fluid">
+    <div class="row flex-nowrap">
+        <div class="col-auto col-lg-3 col-xl-2 px-sm-2 px-0 bg-light w-20" style="width=280px;">
+            <div class="d-flex flex-column pt-2 text-black min-vh-100">
+                <a href="/" class="d-flex align-items-center mb-md-0 me-md-auto text-black text-decoration-none">
+                </a>
+                <p class="fw-bold">Discover</p>
+                <ul class="nav nav-pills flex-column mb-auto">
+                  <li class="nav-item">
+                    {% if page == "home" %}
+                    <a href="{{ url_for('home', username=username) }}" class="nav-link active" id="navLinkActive" aria-current="page">
+                    {% elif page == "rooms" %}
+                    <a href="{{ url_for('home', username=username) }}" class="nav-link text-black" aria-current="page">
+                    {% endif %}
+                      <img class="bi me-2" width="16" height="16" src="https://www.svgrepo.com/show/512347/home-1391.svg">
+                      Home
+                    </a>
+                  </li>
+                  <li>
+                    {% if page == "home" %}
+                    <a href="{{ url_for('rooms', username=username) }}" class="nav-link text-black"  aria-current="page">
+                    {% elif page == "rooms" %}
+                    <a href="{{ url_for('rooms', username=username) }}" class="nav-link active" id="navLinkActive" aria-current="page">
+                    {% endif %}
+
+                      <img class="bi me-2" width="18" height="18" src="https://www.svgrepo.com/show/510897/chat.svg">
+                      Join a Chatroom
+                    </a>
+                  </li>
+                  <li class="pt-5">
+                    <p class=" nav-link text-black">
+                      <img class="bi me-2" width="18" height="18" src="https://www.svgrepo.com/show/532192/list.svg">
+                      Friends list
+                    </p>
+                    <ul>
+                    
+                    
+                    </ul>
+                    {# online or offline status #}
+
+                    {% for friend in friends_list %}
+                      <div class="pb-3 px-2" value="{{ friend }}" id = "{{ friend }}">
+                      {% if status_list[friends_list.index(friend)] == 0 %}
+                          <img id="online-status" class="bi me-2" height="18" width="18" src="{{ url_for('static', filename='img/offline-icon.png') }}">
+                      {% else %}
+                          <img id="online-status" class="bi me-2" height="18" width="18" src="{{ url_for('static', filename='img/online-icon.png') }}">
+                      {% endif %}
+                        <a>{{ friend }}</a>
+
+                        <a data-toggle="tooltip" data-placement="top" title="{{ role_list[friends_list.index(friend)] }}">
+                          <img height="22" width="22" src="https://cdn-icons-png.flaticon.com/512/5151/5151146.png">
+                        </a>
+
+                        <a href="{{ url_for('rooms', username=username) }}" class="btn btn-success float-end" role="button">Chat!</a>
+                        <button id="removeFriendButton" class="remove-friend-button"><img class="" width="25" height="25" src="https://www.svgrepo.com/show/533027/trash-slash-alt.svg"></button>
+                      </div>
+                  {% endfor %}
+                  </li>
+                </ul>
+                {% if role == "Administrative Staff" or role == "Admin" %}
+                  <div>
+                    <p class=" nav-link text-black">
+                      <img class="bi me-2" width="18" height="18" src="https://www.svgrepo.com/show/4552/user-groups.svg">
+                      Registered users
+                    </p>
+                    <ul class="list-unstyled">
+                    {% for user in users %}
+                      {% if user.username != username %}
+                        <li>
+                        <div class="row">
+                          <div class="col-8">
+                            <p>{{ user.username }} </p>
+                          </div>
+                          <div class="col-4" id= "{{ user.username }}">
+                            {% if user.muted == 0%}
+                              <button id="muteUserButton" type="button" class="btn btn-danger btn-sm"> Mute</button>
+                            {% else %}
+                              <button id="muteUserButton" type="button" class="btn btn-primary btn-sm"> Unmute</button>
+                            {% endif %}
+                          </div>
+                        </div>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+                    </ul>
+                  </div>
+                <hr>
+                {% endif %}
+                <div class="align-items-center">
+                  <button type="button" class="btn btn-dark" data-bs-toggle="modal" data-bs-target="#myModal">Add Friend</button>
+                </div>
+                
+                <hr>
+                <div class="dropdown pb-4">
+                    <a href="#" class="d-flex align-items-center text-black text-decoration-none dropdown-toggle" id="dropdownUser1" data-bs-toggle="dropdown" aria-expanded="false">
+                        <img src="https://static-00.iconduck.com/assets.00/user-icon-2048x2048-ihoxz4vq.png" alt="hugenerd" width="30" height="30" class="rounded-circle">
+                        <span class="d-none d-sm-inline mx-1">{{ username }}</span>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-dark text-small shadow">
+                        <li><a class="dropdown-item">{{ role }}</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="{{ url_for('logout', username=username) }}" id="signoutButton">Sign out</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="col py-3">
+            {% block dashboard_content %} {% endblock %}
+        </div>
+        <div class="flex-shrink-0 p-3 bg-dark" style="width: 280px;">
+    <div class="d-flex align-items-center pb-3 mb-3 text-decoration-none border-bottom text-light">
+      <img class="bi me-2" height="25" width="25" src="{{ url_for('static', filename='img/handshake.png') }}">
+      <span class="fs-5 fw-semibold">Friend requests</span>
+    </div>
+    <ul class="list-unstyled ps-0">
+      <li class="mb-1">
+        <button class="btn btn-toggle align-items-center rounded collapsed text-light" data-bs-toggle="collapse" data-bs-target="#home-collapse" aria-expanded="false">
+          Sent
+        </button>
+        <div class="collapse show" id="home-collapse" style="">
+          <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small" >
+          <ul id="requests-sent-list"></ul>
+          </ul>
+        </div>
+      </li>
+      <li class="mb-1">
+        <button class="btn btn-toggle align-items-center rounded collapsed text-light" data-bs-toggle="collapse" data-bs-target="#dashboard-collapse" aria-expanded="false">
+          Received
+        </button>
+        <div class="collapse show" id="dashboard-collapse">
+          <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small" >
+          <ul id="requests-received-list"></ul>
+          </ul>
+        </div>
+      </li>
+      </ul>
+    </div>
+    </div>
+</div>
+
+<script src="/static/js/libs/socket.io.min.js"></script>
+<script>
+let x = 1
+let modify_clicking = 1
+  $(function () {
+    $('[data-toggle="tooltip"]').tooltip()
+  })
+
+  function append_article(article_list, title, content, author, author_role, user_role, reload){
+    const username = "{{ username }}"
+    var containerDiv = document.createElement('div')
+    containerDiv.setAttribute("class", "container-fluid rounded pt-3 pb-3 overflow-auto")
+    containerDiv.setAttribute("style", "background-color: #DFDDDD; max-height:320px;")
+    var article = document.createElement('li')
+    article.setAttribute("class", "pt-5")
+    article.setAttribute("id", x)
+
+    var article_title = document.createElement('a')
+    var article_author = document.createElement('h6')
+    var article_content = document.createElement('p')
+    var modify_article_button = document.createElement('button')
+    modify_article_button.setAttribute("class", "btn btn-primary btn-sm")
+    modify_article_button.textContent = "Modify Article"
+
+    modify_article_button.addEventListener('click', function(){
+      if(modify_clicking == 1){
+        var text_content = article_content.textContent
+        article_content.remove()
+
+        var article_text_area = document.createElement('textarea')
+        var save_changes_button = document.createElement('button')
+
+        article_text_area.textContent = text_content
+        save_changes_button.setAttribute("class", "btn btn-primary btn-sm")
+        save_changes_button.textContent = "Save Changes"
+        save_changes_button.addEventListener('click', function(){
+          var modified_text = article_text_area.value
+          article_content.textContent = modified_text
+          article_content.setAttribute("class", "pe-4")
+          containerDiv.appendChild(article_content)
+          modify_clicking = 1
+          article_text_area.remove()
+          save_changes_button.remove()
+
+          var article_id = article.getAttribute('id')
+          socket.emit("modify_article", title, modified_text)
+        });
+
+        article_text_area.setAttribute("class", "form-control")
+        article_text_area.setAttribute("rows", "10")
+
+        containerDiv.appendChild(article_text_area)
+        containerDiv.appendChild(save_changes_button)
+      };
+      modify_clicking = 0
+      
+    });
+
+    var article_id = article.getAttribute('id')
+
+    article_content.setAttribute("class", "pe-4")
+    article_title.setAttribute("style", "font-size: 20px;")
+
+    var article_url_template = "{{ url_for('article', id='__ARTICLE_ID__', username = '__USERNAME__', role = '__ROLE__') }}"
+
+    var article_url = article_url_template
+    .replace('__ARTICLE_ID__', article_id)
+    .replace('__USERNAME__', "{{ username }}")
+    .replace('__ROLE__', "{{ role }}")
+
+    article_title.setAttribute("href", article_url)
+
+    article_author.textContent = "By " + author + " (" + author_role + ")"
+    article_title.textContent = title
+    console.log(content)
+    article_content.textContent = content
+    article_content.setAttribute("style", "white-space: pre-wrap;")
+
+    containerDiv.appendChild(article_title)
+    containerDiv.appendChild(article_author)
+    
+    if(user_role == "Academic" || user_role == "Admin" || username == author){
+      containerDiv.appendChild(modify_article_button)
+    }
+
+    containerDiv.appendChild(article_content)
+
+    article.appendChild(containerDiv)
+
+    var deleteArticleButton = document.createElement('button')
+    deleteArticleButton.setAttribute("class", "btn btn-danger btn-sm rounded-0")
+    deleteArticleButton.setAttribute("id", "deleteArticleButton")
+    deleteArticleButton.textContent = "Delete article"
+    deleteArticleButton.addEventListener("click", function(){
+      article.remove()
+      var article_id = article.getAttribute('id')
+      socket.emit("delete_article", title, article_id)
+      x-=1
+    });
+
+    if(user_role == "Academic" || user_role == "Admin"){
+      article.appendChild(deleteArticleButton)
+    }
+
+    article_list.appendChild(article)
+    x+=1
+
+  };
+
+  const socket = io();
+
+  window.onload = function() {
+    const username = "{{ username }}"
+    socket.emit("login", username)
+    socket.emit("load_articles")
+  };
+
+  function flush_received() {
+    const senderUsername = '{{ username }}';
+    $.ajax({
+      url: '/home/fetch_friend_requests',
+      data: { "username": senderUsername },
+      dataType: 'json',
+      type: 'GET',
+      success: function(res) {
+        console.log(res);
+        const requestsSentReceiver = document.getElementById('requests-received-list');
+        requestsSentReceiver.innerHTML = '';
+        res.requests.forEach(function(request) {
+          const receivedInList = document.createElement('li');
+          receivedInList.innerHTML = `<strong>${request.fromUser}</strong> (ID: ${request.id})`;
+          receivedInList.classList.add('text-light')
+          receivedInList.dataset.id = request.id;
+
+          
+          const acceptBtn = document.createElement('button');
+          acceptBtn.textContent = 'accept';
+          const rejectBtn = document.createElement('button');
+          rejectBtn.textContent = 'reject';
+
+          receivedInList.appendChild(acceptBtn);
+          receivedInList.appendChild(rejectBtn);
+          requestsSentReceiver.appendChild(receivedInList);
+
+          acceptBtn.addEventListener('click', function() {
+            handleFriendRequest(request.fromUser ,receivedInList.dataset.id, true);
+          });
+
+          rejectBtn.addEventListener('click', function() {
+            handleFriendRequest(request.fromUser, receivedInList.dataset.id, false);
+          });
+        });
+      },
+      error: function(error) {
+        console.log(error);
+      }
+    });
+  }
+
+  function handleFriendRequest(fromUser, received_id, accept) {
+      const url = (accept ? '/accept-friend-request/' : '/reject-friend-request/') + received_id;
+      $.ajax({
+        url: url,
+        type: 'POST',
+        success: function(response) {
+          console.log(accept ? 'Friend request accepted' : 'Friend request rejected', response);
+          if (accept) {
+            const senderUsername = '{{ username }}';
+            $.ajax({
+              url: '/home',
+              data: { "username": senderUsername },
+              type: 'GET',
+              success: function(res) {
+                //console.log({{friends_list}})
+                window.location.href = "/home?username={{ username }}"
+              }
+            })
+          }
+        },
+        error: function(error) {
+          console.log('Error handling friend request', error);
+        }
+      });
+    }
+
+  document.addEventListener("DOMContentLoaded", function() {
+  flush_received();
+
+    const friendForm = document.getElementById('friend_form');
+    friendForm.addEventListener('submit', function(event) {
+      event.preventDefault();
+      const friendUsername = document.getElementById('enter_value').value.trim();
+      const senderUsername = '{{ username }}'.trim();
+      console.log('Form submitted with username:', friendUsername);
+
+      if (!friendUsername) {
+        alert("Please enter a username.");
+        return;
+      }
+
+      console.log('Current friends (before sending request):', Array.from(document.querySelectorAll('#friends-list td')).map(td => td.textContent.trim()));
+
+      const currentFriends = Array.from(document.querySelectorAll('#friends-list td')).map(td => td.textContent.trim());
+      if (currentFriends.includes(friendUsername)) {
+        alert(friendUsername + " is already your friend.");
+        return;
+      }
+
+      const serverData = { "sender": senderUsername, "receiver": friendUsername };
+
+        $.ajax({
+        url: '/home/send_fr',
+        data: JSON.stringify({ "sender": senderUsername, "receiver": friendUsername }),
+        contentType: 'application/json',
+        dataType: 'json',
+        type: 'POST',
+        success: function(response) {
+          alert("Friend request sent!");
+          document.getElementById('enter_value').value = ''; 
+
+          const requestsSentList = document.getElementById('requests-sent-list');
+          const sentItem = document.createElement('li');
+          sentItem.textContent = friendUsername;
+          sentItem.classList.add('text-light')
+          requestsSentList.appendChild(sentItem);
+        },
+        error: function(error) {
+          
+          if (error.status === 409) {
+            alert("You are already friends or a friend request is pending.");
+          } else {
+            console.error(error);
+            alert("Unable to send friend request!");
+          }
+        }
+      });
+    });
+
+
+    var t1 = window.setInterval(flush_received, 1000 * 5);
+});
+
+  function delete_friend(username, friend){
+    $.ajax({
+          url: '/home/delete_fr',
+          data: JSON.stringify({ "username": username, "friend": friend }),
+          contentType: 'application/json',
+          dataType: 'json',
+          type: 'POST',
+          success: function(response) {
+            alert("Friend succesfully deleted!");
+          },
+          error: function(error) {
+            alert("Unable to delete friend!");
+            console.log(error)  
+          }
+        });
+  }
+
+  var muteUserButtons = document.querySelectorAll("#muteUserButton");
+  muteUserButtons.forEach(function(elem) {
+      elem.addEventListener("click", function() {
+        if(elem.getAttribute("class") == "btn btn-danger btn-sm"){
+          elem.setAttribute("class", "btn btn-primary btn-sm")
+          elem.textContent = "Unmute"
+          var muted_username = elem.parentElement.getAttribute("id")
+          alert(muted_username + " muted")
+          var command = "mute"
+          socket.emit("mute_user", command, muted_username)
+   
+
+        }
+        else {
+          elem.setAttribute("class", "btn btn-danger btn-sm")
+          elem.textContent = "Mute"
+          var unmuted_username = elem.parentElement.getAttribute("id")
+          alert(unmuted_username + " unmuted")
+          var command = "unmute"
+          socket.emit("mute_user", command, unmuted_username)
+
+        }
+        
+      });
+    });
+
+  {# event listener when delete button is pressed by user #}
+  let deleteFriendButton = document.querySelectorAll("#removeFriendButton");
+
+  deleteFriendButton.forEach(function(elem) {
+    elem.addEventListener("click", function() {
+      const parentOfDelete = elem.parentElement;
+      console.log(parentOfDelete)
+      parentOfDelete.remove()
+      const friend_name = parentOfDelete.getAttribute('value')
+      const username = "{{ username }}"
+      delete_friend(username, friend_name)
+      socket.emit("delete_friend", username, friend_name)
+    });
+
+    socket.on("update-friend", function(sent_data){
+          const username = sent_data.user
+          const friend_name = sent_data.friend
+          const current_username = "{{ username }}"
+          if (current_username == friend_name){
+            const friend_div = document.getElementById(username)
+            friend_div.remove()
+          }
+          
+      })
+  });
+
+  const signoutButton = document.getElementById('signoutButton')
+  signoutButton.addEventListener("click", function(){
+    const username = "{{ username }}"
+    console.log("logged out!")
+    socket.emit("logout", username)
+  })
+  
+  socket.on("update-logout", username => {
+      const list = {{ friends_as_json }}
+      for (let i = 0; i < list.length; i++){
+        console.log(list[i])
+        if (list[i] == username){
+          var online_status = document.getElementById(list[i]).getElementsByTagName('img')[0];
+          console.log(online_status)
+          online_status.src="{{ url_for('static', filename='img/offline-icon.png') }}"
+        }
+      }
+      console.log(username, "has logged out");
+    })
+
+  socket.on("update-login", username => {
+    const list = {{ friends_as_json }}
+    for (let i = 0; i < list.length; i++){
+      console.log(list)
+      if (list[i] == username){
+        var offline_status = document.getElementById(list[i]).getElementsByTagName('img')[0];
+        console.log(offline_status)
+        offline_status.src="{{ url_for('static', filename='img/online-icon.png') }}"
+      }
+    }
+    console.log(username, "has logged in");
+  });
+</script>
+
+{% block script_content %} {% endblock %}
+
+
+{% endblock %}
+
+
+
+
+

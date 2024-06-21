@@ -1,0 +1,134 @@
+{% extends 'base.jinja' %}
+
+{% block content %}
+
+<div class="container ps-5 pe-5" id="containerDiv">
+    <div class="row pt-3"><h1>{{ article["title"] }}</h1></div>
+    <div class="row pt-3"><h4>By {{ article["author"] }} ({{ article["role"] }})</h4></div>
+    <div class="row pt-3" id="articleContent"><h6 style="white-space: pre-wrap;">{{ article["text"] }}</h6></div>
+    {% if role == "Admin" or role == "Academic " or username == author %}
+        <button class="btn btn-primary btn-sm" id="modifyArticleButton">Modify Article</button>
+    {% endif %}
+    
+    
+</div>
+
+<section>
+    <div class="container my-4 py-4">
+        <div class="row d-flex justify-content-center">
+            <div class="col-md-12 col-lg-10">
+                <div class="card-body ps-4 pe-4 pt-4" style="padding-bottom:0px;">
+                    <h4 class="mb-0">Recent comments</h4>
+                    <p class="fw-light mb-4 pb-2">Latest comments by users</p>
+                </div>
+                <div class="card text-body" id="commentSection">
+                    <hr class="my-0" />
+
+                <hr class="my-0" />
+                {# <hr class="my-0" style="height: 1px;" />            #}
+                </div>
+                <div class="card-body p-4">
+                    <p class="fw-light">Add a comment</p>
+                    <div class="flex-start">
+                        <div>
+                            <div>
+                                <textarea id="articleComment" class="form-control" rows="3"></textarea>
+                            </div>
+                            <div class="pt-3">
+                                <button type="button" class="btn btn-secondary rounded-0" id="addCommentButton">Add comment</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+{% endblock %}
+
+{% block base_script_content %}
+<script src="/static/js/libs/socket.io.min.js"></script>
+<script>
+    const socket = io();
+    const article_title = "{{ article['title'] }}"
+    
+    window.onload = function(){
+        socket.emit("retrieve_article_comment", article_title)
+
+    }
+    
+    var user_comment = document.getElementById("articleComment")
+    var comment_section = document.getElementById("commentSection")
+    var username = "{{ username }}"
+    var role = "{{ role }}"
+
+    socket.on("load-comments", comments => {
+        console.log("test")
+        comment_section.innerHTML = ""
+        for(i = 0; i < comments.length; i++){
+                var comment_content = comments[i].comment
+                var comment_author = comments[i].author
+                var commenteter_role = comments[i].role
+
+                append_comment(article_title, comment_section, comment_content, comment_author, commenteter_role)
+        }
+        
+
+    });
+
+
+    var add_comment_button = document.getElementById("addCommentButton")
+    add_comment_button.addEventListener('click', function(){
+        var user_comment_content = document.getElementById("articleComment").value
+        var article_title = "{{ article['title'] }}"
+        append_comment(article_title, comment_section, user_comment_content, username, role)
+        socket.emit("append_comment", article_title, user_comment_content, username)
+        user_comment.value = ""
+    });
+
+    let modify_clicking = 1
+
+    var containerDiv = document.getElementById("containerDiv")
+    var modify_article_button = document.getElementById("modifyArticleButton")
+    var article_content = document.getElementById("articleContent")
+
+    modify_article_button.addEventListener('click', function(){
+        
+        if(modify_clicking == 1){
+            var text_content = article_content.textContent
+            article_content.remove()
+
+            var article_text_area = document.createElement('textarea')
+            var save_changes_button = document.createElement('button')
+
+            article_text_area.textContent = text_content
+            save_changes_button.setAttribute("class", "btn btn-primary btn-sm")
+            save_changes_button.textContent = "Save Changes"
+            save_changes_button.addEventListener('click', function(){
+                var modified_text = article_text_area.value
+                article_content.textContent = modified_text
+                article_content.setAttribute("style", "white-space: pre-wrap;")
+                article_content.setAttribute("class", "pe-4")
+                containerDiv.appendChild(article_content)
+                modify_clicking = 1
+                article_text_area.remove()
+                save_changes_button.remove()
+
+                console.log(modified_text)
+                socket.emit("modify_article", article_title, modified_text)
+                });
+
+            article_text_area.setAttribute("class", "form-control")
+            article_text_area.setAttribute("rows", "10")
+
+            containerDiv.appendChild(article_text_area)
+            containerDiv.appendChild(save_changes_button)
+      };
+      modify_clicking = 0
+    
+    });
+</script>
+
+
+{% endblock %}

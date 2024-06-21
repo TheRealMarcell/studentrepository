@@ -1,0 +1,26 @@
+<!-- 
+Index page, the "default" page when you visit "http://localhost/" 
+ without any URL parameters at the end
+ -->
+{% extends 'base.jinja' %}
+
+
+{% block content %} 
+    <div class="container-fluid mt-5" id="indexPageDiv"> 
+        <div class="row">
+            <h1 class="text-center">Welcome to the chatroom app!</h1>
+        </div>
+        
+        <div class="row justify-content-md-center pt-2">
+            <button type="button" class="btn btn-dark w-25" onclick="location.href='{{ url_for('signup') }}'">Sign Up</button>
+        </div>
+
+        <div class="row justify-content-md-center pt-3">
+            <button type="button" class="btn btn-dark w-25" onclick="location.href='{{ url_for('login') }}'">Login</button>
+        </div>
+    </div>
+
+    
+    
+    
+{% endblock %}

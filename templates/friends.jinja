@@ -1,0 +1,131 @@
+{% extends 'dashboard.jinja' %}
+
+{% block dashboard_content %}
+
+<div class="modal modal-xl" tabindex="-1" id="addArticleModal">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Add a new article</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group" id="articleTitleDiv">
+          <label>Article title</label>
+          <input type="text" class="form-control" id="articleTitle" placeholder="Enter the title of your article">
+        </div>
+        <div class="form-group pt-4" id="articleText">
+          <label>Article Body</label>
+          <textarea id="articleBodyText" class="form-control" id="exampleFormControlTextarea1" rows="15"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-primary" id="addArticleToPageButton" data-bs-dismiss="modal">Add article</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="container">
+
+  <div class="row">
+    <div class="overflow-auto" style="max-height:750px;">
+    <ul id="articleList" class="list-unstyled">
+    </ul>
+    </div> 
+  </div>
+
+  <div class="row">
+    <div class="col-2 px-2 d-flex flex-column">
+      <div class="mt-auto" id="addArticleButtonDiv">
+      {% if mute_status == 0%}
+        <button type="button" class="btn btn-dark" data-bs-toggle="modal" data-bs-target="#addArticleModal" id="addArticleButton">Add new article</button>    
+      {% endif %}
+      </div>
+    </div>
+  </div>
+
+</div>
+
+
+{% endblock %}
+
+{% block script_content %}
+<script>
+    var article_list = document.getElementById("articleList")
+    socket.on("load-articles", articles => {
+    for(i = 0; i < articles.length; i++){
+      var title = articles[i].title
+      var content = articles[i].text
+      var author = articles[i].author
+      var author_role = articles[i].role
+      var user_role = "{{ role }}"
+      var reload = 0
+      append_article(article_list, title, content, author, author_role, user_role)
+    }
+    });
+
+    socket.on("reload-articles", articles => {
+      article_list.innerHTML = ""
+      for(i = 0; i < articles.length; i++){
+        var title = articles[i].title
+        var content = articles[i].text
+        var author = articles[i].author
+        var author_role = articles[i].role
+        var user_role = "{{ role }}"
+        var reload = 1
+        append_article(article_list, title, content, author, author_role, user_role)
+      }
+    });
+
+  var add_article_to_page = document.getElementById("addArticleToPageButton")
+  add_article_to_page.addEventListener('click', function() {
+    var title = document.getElementById("articleTitle").value
+    var content = document.getElementById("articleBodyText").value
+    var author = "{{ username }}"
+    var role = "{{ role }}"
+
+    append_article(article_list, title, content, author, role, role)
+    socket.emit("add_article", title, author, content)
+    socket.emit("update_articles", title)
+    
+  });
+
+  socket.on("update-delete-article", article_id => {
+    let str_id = article_id.toString();
+    console.log(str_id)
+    article = document.getElementById(str_id)
+    article.remove()
+
+  })
+
+  socket.on("update-user-muted", user_mute_status => {
+    var muted_user = user_mute_status.username
+    var mute_status = user_mute_status.command
+    var add_article_button = document.getElementById("addArticleButton")
+    if ("{{ username }}" == muted_user){
+      if(mute_status == "mute"){
+        add_article_button.remove()
+      }
+      else {
+        var add_article_button_div = document.getElementById("addArticleButtonDiv")
+        var new_button = document.createElement('button')
+        new_button.setAttribute("class", "btn btn-dark")
+        new_button.setAttribute("id", "addArticleButton")
+        new_button.setAttribute("data-bs-target", "#addArticleModal")
+        new_button.setAttribute("data-bs-toggle", "modal")
+        new_button.textContent = "Add a new article"
+        add_article_button_div.appendChild(new_button)
+      }
+      
+
+    }
+
+
+
+  });
+
+</script>
+
+
+{% endblock %}

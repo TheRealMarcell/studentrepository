@@ -1,0 +1,272 @@
+<!-- 
+    Here you'll find the main exhibit: the chat application code. Feel free to look around!
+-->
+{% extends 'base.jinja' %}
+
+
+{% block content %} 
+   <style>
+    nav {
+        border-bottom: 1px solid black;
+        overflow: auto
+    }
+
+    #message_box {
+        border: 1px solid black; 
+        height: 400px; 
+        width: 800px; 
+        overflow: auto;
+        padding: 2px;
+    }
+
+    .text  {
+        margin-top: 2px;
+        margin-bottom: 2px;
+    }
+
+</style>
+
+<!--Navbar, you'll see the username here-->
+<nav style="border-bottom: 1px solid black;">
+    <ol style="float: right">
+        <li style="display:inline-block">Username:  {{ username }} </li>
+    </ol>
+</nav>
+
+<h1>Messaging App </h1>
+
+<main>
+    <!-- The messages are displayed here -->
+    <section id="message_box"></section>
+
+    <!-- These part ideally should be a form element, 
+    but I wrote this code a year ago and I don't want to break anything...-->
+    <section id="chat_box">
+        <p class="text">Chat with: </p>
+        <input id="receiver" placeholder="username">
+        <!-- MDN says its bad practice to use the onclick attribute,
+        but we're using it anyways coz its easy :)-->
+        <button onclick="join_room()">Chat</button>
+    </section>
+
+    <!-- The (message) input box is set to display: none initially, 
+    this means the input box is "invisible" initially-->
+    <section id="input_box" style="display: none" >
+        <p class="text">Message: </p>
+        <input id="message" placeholder="message">
+        <button onclick="send()">Send</button>
+        <button onclick="leave()">Leave Room</button>
+    </section>
+</main>
+
+<script src="/static/js/libs/socket.io.min.js"></script>
+<script>
+
+    // method to generate ECDH key pair
+
+    async function generateECDHKeyPair(room_id){
+        let keyPair = await window.crypto.subtle.generateKey(
+          {
+            name: "ECDH",
+            namedCurve: "P-384",
+          },
+          false,
+          ["deriveKey"]
+        );
+        const publicKey = await crypto.subtle.exportKey("spki", keyPair.publicKey);
+        socket.emit("send_key", publicKey, room_id);
+        socket.on("receive-key", exchanged_key => {
+            const formatted_key = btoa(String.fromCharCode(...new Uint8Array(exchanged_key)))
+            console.log(formatted_key);
+    })
+
+    }
+
+    let room_id = 0;
+
+    // when the user presses the "Enter" key inside of the "message box", 
+    // the message is sent to the server
+    $("#message").on("keyup", (e) => {
+        if (e.key == "Enter") {
+            send();
+        }
+    })
+
+    // when the user presses the enter key inside of the "receiver box"
+    // the user joins a (socket) room
+     $("#receiver").on("keyup", (e) => {
+        if (e.key == "Enter") {
+            join_room();
+        }
+    })
+
+    $(document).ready(function() {
+        if (Cookies.get("room_id") === undefined) {
+            console.log("No room joined.");
+            window.location.href = '/friends'; 
+            return;
+        }
+
+        room_id = parseInt(Cookies.get("room_id"));
+        $("#chat_box").hide();
+        $("#input_box").show();
+        requestPasswordAndFetchMessages(); 
+    });
+
+    // Here's the Socket IO part of the code
+    // things get a bit complicated here so brace yourselves :P
+    let username = "{{ username }}";
+
+    Cookies.set('username', username);
+
+    // initializes the socket
+    const socket = io();
+
+    function checkIfRoomIsReady() {
+        socket.emit('is_room_ready');
+    }
+    let roomReadyCheck = setInterval(checkIfRoomIsReady, 5000);
+
+    // when room is ready, generate a public-private key pair with ECDH and send
+    // the public key to the server to exchange with other user
+    socket.on("room_is_ready", msg => {
+        clearInterval(roomReadyCheck);
+        console.log(msg);
+        generateECDHKeyPair(room_id);
+    })
+
+
+
+    join_room()
+
+    // an incoming message arrives, we'll add the message to the message box
+    socket.on("incoming", (msg, color="black") => {
+        add_message(msg, color);
+    })
+    
+    // we'll send the message to the server by emitting a "send" event
+    function send() {
+
+        let message = $("#message").val();
+        $("#message").val("");
+        socket.emit("send", username, message, room_id);
+    } 
+
+    // we emit a join room event to the server to join a room
+    function join_room() {
+
+        let receiver = "{{ friend }}";
+        // pass in the receiver of our message to the server
+        // as well as the current user's username
+        socket.emit("join", username, receiver, (res) => {
+            // res is a string with the error message if the error occurs
+            // this is a pretty bad way of doing error handling, but watevs
+            if (typeof res != "number") {
+                alert(res);
+                return;
+            }
+
+            // set the room id variable to the room id returned by the server
+            room_id = res;
+            Cookies.set("room_id", room_id);
+            // now we'll show the input box, so the user can input their message
+            $("#chat_box").hide();
+            $("#input_box").show();
+            // socket.emit("is_room_ready")
+        });
+     
+    }
+
+    // function when the user clicks on "Leave Room"
+    // emits a "leave" event, telling the server that we want to leave the room
+    function leave() {
+        Cookies.remove("room_id");
+        socket.emit("leave", username, room_id);
+        $("#input_box").hide();
+        $("#chat_box").show();
+    }
+
+    // function to add a message to the message box
+    // called when an incoming message has reached a client
+    function add_message(message, color) {
+        let box = $("#message_box");
+        let child = $(`<p style="color:${color}; margin: 0px;"></p>`).text(message);
+        box.append(child);
+    }
+
+    function sendEncryptedMessage() {
+    let message = $("#message").val();
+    let receiver = $("#receiver").val();
+    $("#message").val(""); 
+
+
+    let password = prompt("Please enter your password to encrypt the message:");
+
+    $.ajax({
+        url: '/encrypt',
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({
+            'username': "{{ username }}",
+            'password': password,
+            'plaintext': message,
+            'receiver': receiver
+        }),
+        success: function(response) {
+            console.log("Encrypted message sent successfully");
+            addMessageToUI(message, "You");
+        },
+        error: function(error) {
+            console.error("Error sending encrypted message: ", error);
+            alert("Failed to send encrypted message.");
+        }
+    });
+}
+
+function requestPasswordAndFetchMessages() {
+    let password = prompt("Please enter your password to decrypt messages:");
+    if (password === null) {
+
+        window.location.href = '/friends';
+        return;
+    }
+    if (password === "") {
+        alert("Password is required!");
+        requestPasswordAndFetchMessages();
+        return;
+    }
+
+    $.ajax({
+        url: '/get_offline_messages',
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({password: password}),
+        success: function(response) {
+            if (response.messages && response.messages.length > 0) {
+                response.messages.forEach(function(message) {
+                    addMessageToUI(message.text, message.sender);
+                });
+            } else {
+                console.log("No offline messages.");
+            }
+        },
+        error: function(xhr) {
+            let error = JSON.parse(xhr.responseText);
+            alert("Error: " + error.error);
+            requestPasswordAndFetchMessages(); 
+        }
+    });
+}
+
+
+
+    function addMessageToUI(message, sender) {
+        let box = $("#message_box");
+        let messageElement = $('<p></p>').text(`${sender}: ${message}`);
+        box.append(messageElement);
+    }
+
+
+    
+</script>
+{% endblock %}

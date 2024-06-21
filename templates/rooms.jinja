@@ -1,0 +1,172 @@
+{% extends 'dashboard.jinja' %}
+
+{% block dashboard_content %}
+<!-- Main content -->
+<div class="col-md-9">
+    <h3>Active rooms</h3>
+    <input type="text" id="search-room" placeholder="Search rooms..." class="form-control mb-3">
+    <button id="create-room-button" class="btn btn-primary mb-3">Create Room</button>
+    <table class="table table-striped table-clickable">
+        <thead>
+            <tr>
+                <th>Room</th>
+                <th>Title</th>
+                <th>Owner</th>
+                <th>Date</th>
+                <th>Current</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody id="room-list">
+            <!-- Rooms will be dynamically populated here -->
+            <!-- Example row with data-room attribute -->
+            <tr>
+                <td>1</td>
+                <td>Example Room</td>
+                <td>Owner</td>
+                <td>Date</td>
+                <td>Current</td>
+                <td>
+                    <button class="btn btn-sm btn-success btn-chat" data-room="1">Chat!</button>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<!-- Create Room Modal -->
+<div id="create-room-modal" class="modal fade" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Create a new room</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <input type="text" id="room-name" class="form-control" placeholder="Room Name">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" id="submit-room">Submit</button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Room Members Modal -->
+<div id="room-members-modal" class="modal fade" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Room Members</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <ul id="member-list" class="list-group">
+                    <!-- Members will be dynamically populated here -->
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block script_content %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    console.log("JavaScript is loaded!");
+
+    document.getElementById('create-room-button').addEventListener('click', function() {
+        console.log("Create Room button clicked");
+        $('#create-room-modal').modal('show');
+    });
+
+    document.getElementById('submit-room').addEventListener('click', function() {
+        const roomName = document.getElementById('room-name').value;
+        if (roomName) {
+            const roomList = document.getElementById('room-list');
+            const newRow = document.createElement('tr');
+            const roomId = Math.floor(Math.random() * 10000);
+            newRow.innerHTML = `
+                <td>${roomId}</td>
+                <td>${roomName}</td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td>
+                    <button class="btn btn-sm btn-info view-members" data-room="${roomId}">View Members</button>
+                    <button class="btn btn-sm btn-success btn-chat" data-room="${roomId}">Chat!</button>
+                </td>`;
+            roomList.appendChild(newRow);
+            $('#create-room-modal').modal('hide');
+        }
+    });
+
+    document.getElementById('room-list').addEventListener('click', function(event) {
+        if (event.target.classList.contains('view-members')) {
+            const roomId = event.target.getAttribute('data-room');
+            console.log(`View members for room: ${roomId}`);
+            fetch(`/get-room-members?room_id=${roomId}`)
+                .then(response => response.json())
+                .then(data => {
+                    const memberList = document.getElementById('member-list');
+                    memberList.innerHTML = '';
+                    if (data.members && data.members.length > 0) {
+                        data.members.forEach(member => {
+                            const listItem = document.createElement('li');
+                            listItem.className = 'list-group-item';
+                            listItem.textContent = member;
+                            memberList.appendChild(listItem);
+                        });
+                    } else {
+                        memberList.innerHTML = '<li class="list-group-item">No members</li>';
+                    }
+                    $('#room-members-modal').modal('show');
+                })
+                .catch(error => {
+                    console.error('Error fetching room members:', error);
+                });
+        }
+
+        if (event.target.classList.contains('btn-chat')) {
+            const roomId = event.target.getAttribute('data-room');
+            console.log(`Joining room: ${roomId}`);
+            window.location.href = `/chatroom/${roomId}`; // Redirect to chatroom interface
+        }
+    });
+
+    function joinRoom(roomId) {
+        console.log(`User joined room: ${roomId}`);
+        
+        fetch('/join-room', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ room_id: roomId })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                window.location.href = `/chatroom/${roomId}`; // Redirect to chatroom interface
+            } else {
+                alert('Failed to join room');
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    }
+});
+</script>
+{% endblock %}
+
+
+
+
+

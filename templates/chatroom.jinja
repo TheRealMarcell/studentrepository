@@ -1,0 +1,40 @@
+{% extends 'dashboard.jinja' %}
+
+{% block dashboard_content %}
+<!-- Main content -->
+<div class="col-md-9">
+    <h3>{{ room_name }}</h3>
+    <div class="chat-body">
+        <div class="message received">
+            <span class="name">Jeffrey</span>
+            <p>No honestly I'm thinking of a career pivot</p>
+            <span class="timestamp">Nov 30, 2023, 9:41 AM</span>
+        </div>
+        <div class="message received">
+            <p>This is the main chat template</p>
+        </div>
+        <div class="message sent">
+            <p>Oh?</p>
+        </div>
+        <div class="message sent">
+            <p>Cool</p>
+        </div>
+        <div class="message sent">
+            <p>How does it work?</p>
+        </div>
+        <div class="message received">
+            <span class="name">Mark</span>
+            <p>Simple</p>
+        </div>
+        <div class="message received">
+            <p>You just edit any text to type in the conversation you want to show, and delete any bubbles you don’t want to use</p>
+        </div>
+        <div class="message received">
+            <p>Boom</p>
+        </div>
+    </div>
+    <div class="chat-input">
+        <input type="text" placeholder="Enter your message">
+    </div>
+</div>
+{% endblock %}
